@@ -220,8 +220,8 @@ class FeatureMultiPointBezierCurve(Feature):
         else:
             self.N_points = N_points
             self.expected_value_count = 7 + (self.N_points-2)*5
-            clamps = [feature_clamps_coordinate]*6 + [feature_clamps_weight] + 
-                    ( [feature_clamps_coordinate]*4 + [feature_clamps_weight] )*(self.N_points-2)
+            clamps = [feature_clamps_coordinate]*6 + [feature_clamps_weight] 
+            clamps = clamps + ( [feature_clamps_coordinate]*4 + [feature_clamps_weight] )*(self.N_points-2)
             self.value_clamps = np.array(clamps)
             self.value_clamp_low = np.array(self.value_clamps[:,0])
             self.value_clamp_high = np.array(self.value_clamps[:,1])
