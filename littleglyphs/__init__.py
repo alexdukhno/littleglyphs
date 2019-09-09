@@ -10,6 +10,8 @@ class Feature:
     # 'featuretype' denotes which kind of a primitive the feature is.
     # 'values' denote which parameters are to be used to invoke 
     #    this feature when drawing a Glyph (see below).
+    # 'value_clamps' denote the permitted lower and upper bounds on
+    #    values.
     # Note: all values should be in range of [0, 1].
     
     feature_type = None    
@@ -70,17 +72,18 @@ class Feature:
         # Randomizes ALL feature values in-place.
         self.values = np.random.rand(self.N_values)
         self.clamp_values()        
+
         
         
 class FeatureLineSegment(Feature):
+    # Adds a line segment in-place to a raster.
+    # Feature should contain 4 values:
+    # x1,y1,x2,y2 - coordinates of start and endpoints of line segment.
+    # Image center corresponds to (0.5,0.5).
     feature_type = 'LineSegment'
     expected_value_count = 4
     
     def render(self, image, mode='set'):
-        # Adds the line segment in-place to a raster.
-        # Feature should contain 4 values:
-        # x1,y1,x2,y2 - coordinates of start and endpoints of line segment
-        # as floats with values from 0 to 1; image center corresponds to (0.5,0.5).
         
         imgsize_x, imgsize_y = np.shape(image)[0], np.shape(image)[1]
         x1,y1,x2,y2 = self.values
@@ -95,8 +98,82 @@ class FeatureLineSegment(Feature):
             image[rr,cc] = image[rr,cc] + 1
 
         
+                
+class FeatureMultiPointLineSegment(Feature):
+    # Adds a composite (multipoint) line segment feature in-place to a raster.
+    # Feature should contain 4+2*(N_points-2) values:
+    # x1,y1,x2,y2 - coordinates of start and endpoints of the first segment;    
+    #   for every additional point beyond the first two:
+    # xi,yi - coordinates of control point and endpoint of the next segment.
+    #   NB: for every next segment the starting point is the endpoint of the previous one.
+    # image center corresponds to (0.5,0.5).
+      
+    feature_type = 'MultiPointLineSegment'
+    expected_value_count = None
+
+    value_clamps = None
+    value_clamp_low = None
+    value_clamp_high = None
+    N_points = None
+    
+    def __init__(self, N_points, values=None):            
+        if N_points < 3:
+            raise('MultiPointLineSegment requires at least three points')
+        else:
+            self.N_points = N_points
+            self.expected_value_count = 4 + (self.N_points-2)*2
+            clamps = [(0.1,0.899)]*(self.N_points*2)
+            self.value_clamps = np.array(clamps)
+            self.value_clamp_low = np.array(self.value_clamps[:,0])
+            self.value_clamp_high = np.array(self.value_clamps[:,1])
+                    
+        if values != None:
+            if len(values) == self.expected_value_count:
+                self.values = np.array(values)
+                self.N_values = len(self.values)
+            else:
+                raise(
+                    "feature got improper quantity of values: expected "+str(self.expected_value_count)+
+                    ", got "+str(len(values))
+                )
+        else:
+            self.values = np.zeros(self.expected_value_count)
+            self.N_values = self.expected_value_count
+    
+    def render(self, image, mode='set'):        
+        imgsize_x, imgsize_y = np.shape(image)[0], np.shape(image)[1]
+        
+        x1,y1,x2,y2 = self.values[0:4]
+        
+        x1,x2 = (int(x1*imgsize_x), int(x2*imgsize_x))
+        y1,y2 = (int(y1*imgsize_y), int(y2*imgsize_y))
+        
+        cc,rr = skimage.draw.line(x1,y1,x2,y2)
+        if mode=='set':
+            image[rr,cc] = 1
+        else:
+            image[rr,cc] = image[rr,cc] + 1
+        
+        for i in range(0,self.N_points-2):
+            x1, y1 = x2, y2
+            x2,y2 = self.values[4+i*2 : 4+(i+1)*2]
+            x2,y2 = (int(x2*imgsize_x), int(y2*imgsize_y))
+            
+            cc,rr = skimage.draw.line(x1,y1,x2,y2)
+            if mode=='set':
+                image[rr,cc] = 1
+            else:
+                image[rr,cc] = image[rr,cc] + 1
+        
+        
+        
         
 class FeatureBezierCurve(Feature):
+    # Adds a bezier feature in-place to a raster.
+    # Feature should contain 7 values:
+    # x1,y1,xc,tc,x2,y2,wc - coordinates of start, control, and endpoints of bezier curve, and weight of control point.
+    # Image center corresponds to (0.5,0.5).
+        
     feature_type = 'BezierCurve'
     expected_value_count = 7
 
@@ -105,11 +182,6 @@ class FeatureBezierCurve(Feature):
     value_clamp_high = np.array(value_clamps[:,1])
   
     def render(self, image, mode='set'):
-        # Adds the bezier feature in-place to a raster.
-        # Feature should contain 7 values:
-        # x1,y1,xc,tc,x2,y2,wc - coordinates of start, mid, and endpoints of bezier curve, and weight of midpoint
-        # as floats with values from 0 to 1; image center corresponds to (0.5,0.5).
-        
         imgsize_x, imgsize_y = np.shape(image)[0], np.shape(image)[1]
         x1,y1,xc,yc,x2,y2,wc = self.values
         x1,xc,x2 = (int(x1*imgsize_x), int(xc*imgsize_x), int(x2*imgsize_x))
@@ -121,6 +193,77 @@ class FeatureBezierCurve(Feature):
         else:
             image[rr,cc] = image[rr,cc] + 1
 
+            
+            
+class FeatureMultiPointBezierCurve(Feature):
+    # Adds a composite (multipoint) bezier feature in-place to a raster.
+    # Feature should contain 7+5*(N_points-2) values:
+    # x1,y1,xc,tc,x2,y2,wc - coordinates of start, control, and endpoints of the first segment of bezier curve, 
+    #   and weight of control point;
+    #   for every additional point beyond the first two:
+    # xci,tci,xi,yi,wc - coordinates of control point and endpoint of the next segment, and weight of control point.
+    #   NB: for every next segment the starting point is the endpoint of the previous one.
+    # image center corresponds to (0.5,0.5).
+      
+    feature_type = 'MultiPointBezierCurve'
+    expected_value_count = None
+
+    value_clamps = None
+    value_clamp_low = None
+    value_clamp_high = None
+    N_points = None
+    
+    def __init__(self, N_points, values=None):            
+        if N_points < 3:
+            raise('MultiPointBezierCurve requires at least three points')
+        else:
+            self.N_points = N_points
+            self.expected_value_count = 7 + (self.N_points-2)*5
+            clamps = [(0.1,0.899)]*6 + [(0,2)] + ( [(0.1,0.899)]*4 + [(0,2)] )*(self.N_points-2)
+            self.value_clamps = np.array(clamps)
+            self.value_clamp_low = np.array(self.value_clamps[:,0])
+            self.value_clamp_high = np.array(self.value_clamps[:,1])
+                    
+        if values != None:
+            if len(values) == self.expected_value_count:
+                self.values = np.array(values)
+                self.N_values = len(self.values)
+            else:
+                raise(
+                    "feature got improper quantity of values: expected "+str(self.expected_value_count)+
+                    ", got "+str(len(values))
+                )
+        else:
+            self.values = np.zeros(self.expected_value_count)
+            self.N_values = self.expected_value_count
+    
+    def render(self, image, mode='set'):
+        
+        imgsize_x, imgsize_y = np.shape(image)[0], np.shape(image)[1]
+        
+        x1,y1,xc,yc,x2,y2,wc = self.values[0:7]
+        x1,xc,x2 = (int(x1*imgsize_x), int(xc*imgsize_x), int(x2*imgsize_x))
+        y1,yc,y2 = (int(y1*imgsize_y), int(yc*imgsize_y), int(y2*imgsize_y))
+        cc,rr = skimage.draw.bezier_curve(x1,y1,xc,yc,x2,y2,wc, shape = (imgsize_x,imgsize_y))
+        if mode=='set':
+            image[rr,cc] = 1
+        else:
+            image[rr,cc] = image[rr,cc] + 1
+        
+        for i in range(0,self.N_points-2):
+            x1, y1 = x2, y2
+            xc,yc,x2,y2,wc = self.values[7+i*5 : 7+(i+1)*5]
+            xc,x2 = (int(xc*imgsize_x), int(x2*imgsize_x))
+            yc,y2 = (int(yc*imgsize_y), int(y2*imgsize_y))
+
+            cc,rr = skimage.draw.bezier_curve(x1,y1,xc,yc,x2,y2,wc, shape = (imgsize_x,imgsize_y))
+            if mode=='set':
+                image[rr,cc] = 1
+            else:
+                image[rr,cc] = image[rr,cc] + 1
+               
+            
+            
             
             
 class FeatureEllipse(Feature):
@@ -370,16 +513,19 @@ class RasterArray:
         new_raster_array.distort(distorter)
         return new_raster_array
     
+
+#--- Distortion related ---
+    
     
     
 class Distortion:
-    # A distortion is a wrapper for a function that distorts a raster image 
-    #   and this function's parameters.
+    # A distortion is a wrapper for a function that distorts a raster image, 
+    #   using a certain set of parameters.
     distortion_type = None
     def __init__(self, **kwargs):
         self.params = kwargs
         
-        
+
 
 class DistortionRandomAffine(Distortion):
     # Distorts an image with a random affine transformation.
@@ -412,9 +558,9 @@ class DistortionRandomAffine(Distortion):
             shear= (np.random.rand()-0.5)*2*self.shear_distort_max,
             translation=None            
         )    
-        newimg = skimage.util.pad(newimg,pad_width=imgsize*2, mode='constant')
+        newimg = skimage.util.pad(newimg,pad_width=imgsize*3, mode='constant')
         newimg = skimage.transform.warp(newimg,transform)
-        newimg = skimage.util.pad(newimg,pad_width=imgsize*2, mode='constant')
+        newimg = skimage.util.pad(newimg,pad_width=imgsize*3, mode='constant')
         newimg_moments = skimage.measure.moments(newimg,order=1)
         centroid_x = int(newimg_moments[1,0]/newimg_moments[0,0])
         centroid_y = int(newimg_moments[0,1]/newimg_moments[0,0])
