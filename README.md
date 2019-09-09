@@ -1,5 +1,5 @@
 # littleglyphs
-A Python library containing a set of useful for investigating the performance of image classifiers 
+A Python library containing a set of useful classes and routines for investigating the performance of image classifiers 
 on procedurally generated letter-like images. 
 
 Built around:
