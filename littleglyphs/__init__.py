@@ -3,6 +3,8 @@ import numpy as np
 import scipy
 import skimage
 
+feature_clamps_coordinate = (0.1,0.899)
+feature_clamps_weight = (0.01,2)
 
 class Feature:    
     # a Feature denotes a graphical primitive (e.g. curve, circle, 
@@ -12,11 +14,10 @@ class Feature:
     #    this feature when drawing a Glyph (see below).
     # 'value_clamps' denote the permitted lower and upper bounds on
     #    values.
-    # Note: all values should be in range of [0, 1].
     
     feature_type = None    
-    expected_value_count = 0
-    value_clamps = (0.1,0.899)
+    expected_value_count = 0    
+    value_clamps = feature_clamps_coordinate
     value_clamp_low = value_clamps[0]
     value_clamp_high = value_clamps[1]
     
@@ -35,7 +36,7 @@ class Feature:
             self.N_values = self.expected_value_count
         
     def __repr__(self):
-        return 'Feature: type='+str(self.featuretype)+'; values='+str(self.values)    
+        return 'Feature: type='+str(self.feature_type)+'; values='+str(self.values)    
     
     def set_values(self, values):
         np.copyto(self.values, values)
@@ -76,7 +77,7 @@ class Feature:
         
         
 class FeatureLineSegment(Feature):
-    # Adds a line segment in-place to a raster.
+    # A line segment feature.
     # Feature should contain 4 values:
     # x1,y1,x2,y2 - coordinates of start and endpoints of line segment.
     # Image center corresponds to (0.5,0.5).
@@ -100,7 +101,7 @@ class FeatureLineSegment(Feature):
         
                 
 class FeatureMultiPointLineSegment(Feature):
-    # Adds a composite (multipoint) line segment feature in-place to a raster.
+    # A composite (multipoint) line segment.
     # Feature should contain 4+2*(N_points-2) values:
     # x1,y1,x2,y2 - coordinates of start and endpoints of the first segment;    
     #   for every additional point beyond the first two:
@@ -122,7 +123,7 @@ class FeatureMultiPointLineSegment(Feature):
         else:
             self.N_points = N_points
             self.expected_value_count = 4 + (self.N_points-2)*2
-            clamps = [(0.1,0.899)]*(self.N_points*2)
+            clamps = [feature_clamps_coordinate]*(self.N_points*2)
             self.value_clamps = np.array(clamps)
             self.value_clamp_low = np.array(self.value_clamps[:,0])
             self.value_clamp_high = np.array(self.value_clamps[:,1])
@@ -169,7 +170,7 @@ class FeatureMultiPointLineSegment(Feature):
         
         
 class FeatureBezierCurve(Feature):
-    # Adds a bezier feature in-place to a raster.
+    # A simple bezier feature: two endpoints, one control point and its weight.
     # Feature should contain 7 values:
     # x1,y1,xc,tc,x2,y2,wc - coordinates of start, control, and endpoints of bezier curve, and weight of control point.
     # Image center corresponds to (0.5,0.5).
@@ -177,7 +178,7 @@ class FeatureBezierCurve(Feature):
     feature_type = 'BezierCurve'
     expected_value_count = 7
 
-    value_clamps = np.array([(0.1,0.899)]*6 + [(0,2)])
+    value_clamps = np.array([feature_clamps_coordinate]*6 + [feature_clamps_weight])
     value_clamp_low = np.array(value_clamps[:,0])
     value_clamp_high = np.array(value_clamps[:,1])
   
@@ -196,7 +197,7 @@ class FeatureBezierCurve(Feature):
             
             
 class FeatureMultiPointBezierCurve(Feature):
-    # Adds a composite (multipoint) bezier feature in-place to a raster.
+    # A composite (multipoint) bezier feature.
     # Feature should contain 7+5*(N_points-2) values:
     # x1,y1,xc,tc,x2,y2,wc - coordinates of start, control, and endpoints of the first segment of bezier curve, 
     #   and weight of control point;
@@ -219,7 +220,8 @@ class FeatureMultiPointBezierCurve(Feature):
         else:
             self.N_points = N_points
             self.expected_value_count = 7 + (self.N_points-2)*5
-            clamps = [(0.1,0.899)]*6 + [(0,2)] + ( [(0.1,0.899)]*4 + [(0,2)] )*(self.N_points-2)
+            clamps = [feature_clamps_coordinate]*6 + [feature_clamps_weight] + 
+                    ( [feature_clamps_coordinate]*4 + [feature_clamps_weight] )*(self.N_points-2)
             self.value_clamps = np.array(clamps)
             self.value_clamp_low = np.array(self.value_clamps[:,0])
             self.value_clamp_high = np.array(self.value_clamps[:,1])
@@ -267,14 +269,15 @@ class FeatureMultiPointBezierCurve(Feature):
             
             
 class FeatureEllipse(Feature):
+    # An ellipse feature.
+    # Feature should contain 4 values:
+    # x1,y1,x2,y2 - coordinates of top-left and bottom-right points of bounding rectangle
+    # as floats with values from 0 to 1; image center corresponds to (0.5,0.5).
+
     feature_type = 'Ellipse'
     expected_value_count = 4
 
     def render(self, image, mode='set'):
-        # Adds the bezier feature in-place to a raster.
-        # Feature should contain 4 values:
-        # x1,y1,x2,y2 - coordinates of top-left and bottom-right points of bounding rectangle
-        # as floats with values from 0 to 1; image center corresponds to (0.5,0.5).
         
         imgsize_x, imgsize_y = np.shape(image)[0], np.shape(image)[1]
         x1,y1,x2,y2 = self.values
@@ -393,7 +396,7 @@ class GlyphList:
     def add_glyph(self, glyph):
         self.glyphs.append(glyph)
         self.N_glyphs = len(self.glyphs)
-    def remove_glyphs(self, glyph_index):
+    def remove_glyph(self, glyph_index):
         del self.glyphs[glyph_index]        
         self.N_glyphs = len(self.glyphs)    
     
@@ -450,7 +453,7 @@ class GlyphList:
                 imgsize, 
                 blur, blur_factor_for_current_raster,
                 up_down_sample, normalize,
-                mode='set'
+                mode=mode
             )
             
             categories.append(glyph.category)
