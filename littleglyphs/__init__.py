@@ -398,7 +398,10 @@ class GlyphList:
         self.N_glyphs = len(self.glyphs)
     def remove_glyph(self, glyph_index):
         del self.glyphs[glyph_index]        
-        self.N_glyphs = len(self.glyphs)    
+        self.N_glyphs = len(self.glyphs)
+
+    def sort_by_category(self):
+        self.glyphs.sort(key=lambda x: x.category)        
     
     def remove_glyph_category(self, removed_category):
         indices_to_remove = []
