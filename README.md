@@ -47,6 +47,7 @@ Also, figuring stuff out is fun (and like with any hobby project, it yields expe
   * instead of random candidates, try candidates with mutation of a couple parameters at a time?
   * instead of maximization of ambiguity, use multi-hot encoding with outputs for "definitely not a class 1"? would it be just an inversion of the output, or would it yield additional interesting info?
   * or use a parallel network for deciding what the output is _not_?
+* train for a bigger alphabet and then cherry-pick the elements with lowest cross-confusion?
 * figure out a global metric for gauging overall alphabet unambiguity
   * based on non-diagonal elements for probability matrix?
   * based on classifier performance (test accuracy/loss)?
