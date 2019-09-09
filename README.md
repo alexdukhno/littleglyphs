@@ -1,5 +1,5 @@
 # littleglyphs
-A Python library containing a set of useful routines for investigating the performance of image classifiers 
+A Python library containing a set of useful for investigating the performance of image classifiers 
 on procedurally generated letter-like images. 
 
 Built around:
@@ -18,8 +18,8 @@ or, more precisely,
 _"How to construct a set of glyphs that look as different from each other as possible (preferably containing not too many elements)?"_
 
 For example, in Latin script uppercase I and lowercase l usually look almost identical, 
-sans-serif Hebrew has very similar-looking Het (ח) and Tav (ת),
-while Katakana, one of two Japanese syllabaries, contains very similar N ン and So ソ or (quite happy-looking) Shi シ and Tsu ツ.
+sans-serif Hebrew has very similar-looking Het ח and Tav ת,
+while Katakana, one of two Japanese syllabaries, contains very similar N ン and So ソ or Shi シ and Tsu ツ.
 Such ambiguity can often result in confusion for both human and machine readers (especially untrained ones).
 
 To answer the question, there would be a need for: 
@@ -37,6 +37,6 @@ and human-readable font.
 Also, this approach could be generalized to gauge performance of image classifiers against each other and uncover their 
 issues and points of failure. For instance, there is an issue with convolutional neural networks for image classification
 [being translationally-invariant](https://medium.com/ai%C2%B3-theory-practice-business/understanding-hintons-capsule-networks-part-i-intuition-b4b559d1159b), 
-resulting in high similarity metric for images with parts swapped around.
+resulting in high similarity metric for images with some of the parts swapped around.
 
 Also, figuring stuff out is fun.
