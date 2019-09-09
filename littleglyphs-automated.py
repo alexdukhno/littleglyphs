@@ -363,6 +363,7 @@ while glyph_alphabet_improval_iter < glyph_alphabet_improval_maxiter:
     # Incorporate the new glyph in place of the old one. Generate a new set of rasters.
     glyph_alphabet.remove_glyph_category(worst_class_index)
     glyph_alphabet.add_glyph(new_candidate_glyph)
+    glyph_alphabet.sort_by_category()
 
     fig, axs = lilgplt.visualize_glyph_list(
         glyph_alphabet,
@@ -391,7 +392,6 @@ while glyph_alphabet_improval_iter < glyph_alphabet_improval_maxiter:
     print('done in '+'{0:.3f}'.format(time_end-time_start)+' sec '+
          '('+'{0:.3f}'.format((time_end-time_start)/N_glyphs_in_alphabet)+' sec per glyph).')
 
-    
     
     
     plt.close('all')
