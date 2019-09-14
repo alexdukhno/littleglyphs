@@ -129,7 +129,7 @@ fig.savefig(output_path_prefix+'ground_truth.png',bbox_inches='tight')
 
 # --- Start the loop for improving the glyph alphabet ---
 glyph_alphabet_improval_iter = 0
-glyph_alphabet_improval_maxiter = 10
+glyph_alphabet_improval_maxiter = 100
 
 while glyph_alphabet_improval_iter < glyph_alphabet_improval_maxiter:
 
