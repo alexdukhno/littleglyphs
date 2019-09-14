@@ -490,17 +490,35 @@ class RasterArray:
         # future: extend to rectangular images
         self.imgsize_x = self.rasters.shape[1]
         self.imgsize_y = self.rasters.shape[2]
+        self.category_indices = {}
+        self.__rebuild_category_indices()
+        self.N_different_categories = len(self.category_indices)
         
     def __getitem__(self, key):
         return self.rasters[key]
     
     def __len__(self):
         return self.N_rasters
-    
+
+    def __rebuild_category_indices(self):
+        # Category dictionary maps categories as keys to lists 
+        # of raster indices corresponding to these categories.
+        for i in range(0,self.N_rasters):
+            if self.categories[i] in self.category_indices:
+                self.category_indices[self.categories[i]] += [i]
+            else:
+                self.category_indices[self.categories[i]] = [i]
+        
     def repeated(self,N_times):
         # Concatenates the raster array N_times in a row, keeping track of categories.
         new_rasters = self.rasters.repeat(N_times,axis=0)
         new_categories = self.categories.repeat(N_times,axis=0)
+        new_raster_array = self.__class__(new_rasters,new_categories)
+        return new_raster_array
+    
+    def select_category(self, category):
+        new_rasters = self.rasters[self.category_indices[category]]
+        new_categories = self.categories[self.category_indices[category]]
         new_raster_array = self.__class__(new_rasters,new_categories)
         return new_raster_array
     
