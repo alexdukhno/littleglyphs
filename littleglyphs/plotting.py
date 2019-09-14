@@ -45,16 +45,18 @@ def visualize_img_array(img_array, img_categories, N_images_to_show = 10, figsiz
     for i, ax in enumerate(axs.flat):
         if i<len(img_array):
             ax.imshow(img_array[i], cmap='Greys')
-            if not show_probabilities:
+            label = ''
+            if img_categories is not None:            
                 label = str(int(img_categories[i]))
-            else:
-                label = str(int(img_categories[i])) + ': ' + str(int(probabilities[i]*100)) + '%'
+            if show_probabilities:
+                label += ': ' + str(int(probabilities[i]*100)) + '%'
                 for spine in ax.spines.values():
                     spine.set_edgecolor(
                         border_cmap(probabilities[i])  
                     )
                     spine.set_linewidth(2)
-            ax.text(1, 2, label, bbox={'facecolor': 'white', 'pad': 2})
+            if img_categories is not None:
+                ax.text(1, 2, label, bbox={'facecolor': 'white', 'pad': 2})
             
         #ax.axis('off')
         ax.get_xaxis().set_ticks([])
