@@ -32,6 +32,50 @@ def split_data_for_learning(X, Y, random_seed, crossval_proportion = 0.2, test_p
 
 
 
+def image_distance_euclidean(a,b):
+    assert a.shape == b.shape, 'shapes of images are not equal'
+    assert len(a.shape) == 2, 'images have to be 2d grayscale'
+    imgsize_x = a.shape[0]
+    imgsize_y = a.shape[1]
+    return ( np.linalg.norm(a-b) / (imgsize^2) )
+
+
+
+def prob_conf_ent_matrix(Y_test,Y_predicted,N_classes):
+    # Calculate probabilistic confusion entropy matrix. 
+    # The matrix is basically like a regular confusion matrix,
+    #   but instead of treating the highest output of a classifier as the output class,
+    #   it treats outputs of classifier as "surety" of the classifier in each class.
+    # This allows to see the cases where the classifier works, 
+    #   but is not very sure in its answers.
+    #
+    # Based on doi:10.3390/e15114969
+    #
+    # Each row corresponds to the "true" class.
+    # Each column corresponds to the "surety" of the classifier
+    #   in its output for the column.
+    # So, for instance, an element [4,2] corresponds to 
+    #   the degree of surety with which the classifier says "it belongs to class 2"
+    #   when it sees an element that in reality belongs to class 4.
+    # Similarly to the case of a regular confusion matrix,
+    #   a good classifier will have high values of diagonal elements
+    #   and low values of all other elements.
+    
+    Y_test_class = np.argmax(Y_test, axis=1)
+    classfreqs = np.bincount(Y_test_class)
+    prob_conf_ent_matrix = np.zeros((N_classes,N_classes))
+    for i in range(0,Y_predicted.shape[0]):
+        prob_conf_ent_matrix[Y_test_class[i]] += Y_predicted[i]
+    prob_conf_ent_matrix = prob_conf_ent_matrix / classfreqs
+
+    return prob_conf_ent_matrix
+
+
+
+
+# ------- Classification models -------
+
+
 def prep_data_for_CNN_model(A,imgsize):
     # Keras implementation of 2d convolutional layers requires that the image has channels, 
     # even if there's a single channel.
@@ -146,33 +190,4 @@ def make_CNN_model(imgsize, N_classes, complexity = 20):
     return model
 
 
-
-def prob_conf_ent_matrix(Y_test,Y_predicted,N_classes):
-    # Calculate probabilistic confusion entropy matrix. 
-    # The matrix is basically like a regular confusion matrix,
-    #   but instead of treating the highest output of a classifier as the output class,
-    #   it treats outputs of classifier as "surety" of the classifier in each class.
-    # This allows to see the cases where the classifier works, 
-    #   but is not very sure in its answers.
-    #
-    # Based on doi:10.3390/e15114969
-    #
-    # Each row corresponds to the "true" class.
-    # Each column corresponds to the "surety" of the classifier
-    #   in its output for the column.
-    # So, for instance, an element [4,2] corresponds to 
-    #   the degree of surety with which the classifier says "it belongs to class 2"
-    #   when it sees an element that in reality belongs to class 4.
-    # Similarly to the case of a regular confusion matrix,
-    #   a good classifier will have high values of diagonal elements
-    #   and low values of all other elements.
-    
-    Y_test_class = np.argmax(Y_test, axis=1)
-    classfreqs = np.bincount(Y_test_class)
-    prob_conf_ent_matrix = np.zeros((N_classes,N_classes))
-    for i in range(0,Y_predicted.shape[0]):
-        prob_conf_ent_matrix[Y_test_class[i]] += Y_predicted[i]
-    prob_conf_ent_matrix = prob_conf_ent_matrix / classfreqs
-
-    return prob_conf_ent_matrix
 
