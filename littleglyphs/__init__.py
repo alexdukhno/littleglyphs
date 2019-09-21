@@ -410,7 +410,13 @@ class GlyphList:
                 indices_to_remove.append(i)
         self.glyphs = [glyph for i, glyph in enumerate(self.glyphs) if i not in indices_to_remove]        
         self.N_glyphs = len(self.glyphs)
-                
+    
+    def selected(self, indices):
+        # Makes a new copy of the glyphlist containing only selected glyphs.
+        new_glyphs = [self.glyphs[i] for i in indices]
+        new_glyphlist = self.__class__(new_glyphs)
+        return new_glyphlist
+    
     def permuted(self, permutation_strength, N_glyph_permutations, 
                  keep_original_glyphs=False):
         # Makes a new copy of the glyphlist.
