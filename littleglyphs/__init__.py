@@ -399,7 +399,18 @@ class GlyphList:
     def remove_glyph(self, glyph_index):
         del self.glyphs[glyph_index]        
         self.N_glyphs = len(self.glyphs)
-
+    
+    def reset_categories(self, order='ascending'):
+        if order == 'ascending':
+            for i, glyph in enumerate(self.glyphs):
+                self.glyphs[i].set_category(i)
+        elif order == 'descending':
+            for i, glyph in enumerate(self.glyphs):
+                self.glyphs[i].set_category(self.N_glyphs-i-1)
+        else:
+            raise 'Unrecognized category order'
+            
+    
     def sort_by_category(self):
         self.glyphs.sort(key=lambda x: x.category)        
     
@@ -413,9 +424,21 @@ class GlyphList:
     
     def selected(self, indices):
         # Makes a new copy of the glyphlist containing only selected glyphs.
-        new_glyphs = [self.glyphs[i] for i in indices]
+        new_glyphs = [copy.deepcopy(self.glyphs[i]) for i in indices]
         new_glyphlist = self.__class__(new_glyphs)
         return new_glyphlist
+    
+    def duplicated(self, N_clones):
+        # Makes a new glyphlist,
+        # duplicating all glyphs in the existing glyphlist several times in a following manner:
+        # [glyph1, glyph2, glyph3] duplicated twice becomes
+        # [glyph1, glyph1, glyph2, glyph2, glyph3, glyph3]
+        new_glyphs = []
+        for glyph in self.glyphs:
+            for i in range(N_clones):
+                new_glyphs.append(copy.deepcopy(glyph))                
+        new_glyphlist = self.__class__(new_glyphs)
+        return new_glyphlist        
     
     def permuted(self, permutation_strength, N_glyph_permutations, 
                  keep_original_glyphs=False):
@@ -425,7 +448,7 @@ class GlyphList:
         # If keep_original_glyphs is True, include the original glyphs at the beginning of the list.
         
         if keep_original_glyphs:
-            new_glyphs = self.glyphs
+            new_glyphs = copy.deepcopy(self.glyphs)
         else:
             new_glyphs = []
             
