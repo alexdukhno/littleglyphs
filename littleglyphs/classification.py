@@ -37,7 +37,7 @@ def image_distance_euclidean(a,b):
     assert len(a.shape) == 2, 'images have to be 2d grayscale'
     imgsize_x = a.shape[0]
     imgsize_y = a.shape[1]
-    return ( np.linalg.norm(a-b) / (imgsize^2) )
+    return ( np.linalg.norm(a-b) / (imgsize_x*imgsize_y) )
 
 
 
@@ -73,7 +73,71 @@ def prob_conf_ent_matrix(Y_test,Y_predicted,N_classes):
 
 
 
-# ------- Classification models -------
+# ------- Classification model: naive distance metric -------
+
+class DistanceMetricClassifier:
+    N_categories = None
+    distance_function = None
+    cat_distance_matrix = None    
+    imgsize = None
+    
+    def __init__(self, N_categories, imgsize, distance_function):
+        self.N_categories = N_categories
+        self.distance_function = distance_function
+        self.imgsize = imgsize
+        self.avg_cat_representations = np.zeros(
+            (self.N_categories,imgsize,imgsize)
+        )
+        self.cat_distance_matrix = np.zeros(
+            (self.N_categories, self.N_categories)
+        )    
+    
+    def train(self, X_train, Y_train):        
+        N_examples = X_train.shape[0]
+        avg_category_X = np.zeros(
+            (self.N_categories,self.imgsize,self.imgsize)
+        )
+        Y_categories = np.argmax(Y_train, axis=1)        
+        Y_category_counts = np.sum(Y_train, axis=0)
+        
+        # Build an average representation for each category
+        for i in range(0,N_examples):
+            avg_category_X[Y_categories[i]] += X_train[i]       
+        for i in range(0,self.N_categories):
+            avg_category_X[i] = avg_category_X[i] / Y_category_counts[i]
+                            
+        # Find distances between average representations for each pair of categories
+        for i in range(0,self.N_categories):
+            for j in range(0,self.N_categories):
+                self.cat_distance_matrix[i,j] = self.distance_function(avg_category_X[i], avg_category_X[j])        
+        self.avg_cat_representations = avg_category_X
+                    
+    def predict(self, X_test):
+        # Output is softmax of inverse distances from the example to the avg representations for each category
+        N_examples = X_test.shape[0]
+        candidate_distances = np.zeros(self.N_categories)
+        Y_predicted = np.zeros((N_examples, self.N_categories))
+        for i in range(0,N_examples):
+            for c in range(0,self.N_categories):
+                candidate_distances[c] = self.distance_function(X_test[i], self.avg_cat_representations[c])            
+            candidate_distances = np.power(candidate_distances, -1)
+            candidate_distances = np.exp(candidate_distances) / np.sum(np.exp(candidate_distances), axis=0)
+            Y_predicted[i] = candidate_distances
+            
+        return Y_predicted
+    
+    def evaluate(self, X_test, Y_test):
+        N_examples = X_test.shape[0]
+        Y_predicted = self.predict(X_test)
+        Y_test_categories = np.argmax(Y_test,axis=1)
+        Y_predicted_categories = np.argmax(Y_predicted,axis=1)
+        accuracy = np.sum(Y_test_categories==Y_predicted_categories) / N_examples
+        return accuracy
+        
+        
+
+
+# ------- Classification model: CNN -------
 
 
 def prep_data_for_CNN_model(A,imgsize):
