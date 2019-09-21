@@ -30,34 +30,13 @@ to one glyph or another;
 
 _littleglyphs_ provides a set of tools for attempting to answer such kind of a question.
 
-## Why is it useful?
+## What are the applications?
 An obvious utility would be to construct a [wear-resistant](https://i.imgur.com/lcrC9VB.png), easily machine-readable 
 and human-readable font.
 
-Also, this approach could be generalized to gauge performance of image classifiers against each other and uncover their 
-issues and points of failure. For instance, there is an issue with convolutional neural networks for image classification
-[being translationally-invariant](https://medium.com/ai%C2%B3-theory-practice-business/understanding-hintons-capsule-networks-part-i-intuition-b4b559d1159b), 
-resulting in high similarity metric for images with some of the parts swapped around.
+This approach can be generalized to gauge performance of image classifiers against each other and uncover their 
+issues and points of failure using simple examples. For instance, there is an issue with convolutional neural networks for image classification
+[being translationally-invariant](https://medium.com/ai%C2%B3-theory-practice-business/understanding-hintons-capsule-networks-part-i-intuition-b4b559d1159b), resulting in high perceived similarity for images with some of the parts swapped around.
 
 Also, figuring stuff out is fun (and like with any hobby project, it yields experience along the way).
 
-## Todo
-
-* currently, for an alphabet with identical symbols and with maximization of ambiguity, the ideal candidate would be the same identical symbol
-  * instead of random candidates, try candidates with mutation of a couple parameters at a time?
-  * instead of maximization of ambiguity, use multi-hot encoding with outputs for "definitely not a class 1"? would it be just an inversion of the output, or would it yield additional interesting info?
-  * or use a parallel network for deciding what the output is _not_?
-* train for a bigger alphabet and then cherry-pick the elements with lowest cross-confusion?
-* figure out a global metric for gauging overall alphabet unambiguity
-  * based on non-diagonal elements for probability matrix?
-  * based on classifier performance (test accuracy/loss)?
-* think about implementing a metric for "have we seen something similar to this at any point"
-  * if we use a separate network for this, does this basically make something along the lines of a GAN?
-  * such a metric would go lower and lower for a very long time, as we will have seen more and more of the glyph space - limit by implementing forgetting (e.g. sliding average)? 
-* implement an stop condition into the automated script (other than max allowed iterations)
-  * based on one of the aforementioned metrics?
-* think about training time:
-  * force a small number of epochs? this basically introduces pressure to find stuff that is _easily learnable_ for a given classifier architecture, which might be the right track
-* implement other classifiers
-  * naive pixel-wise cross-correlation of average image for each category
-* add a nice rendered Jupyter notebook with all outputs shown
