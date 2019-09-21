@@ -154,12 +154,24 @@ def MNISTlike_glyph_alphabet():
     glyphs.append(glyph) 
 
     glyph = lilg.Glyph(
-        [lilg.FeatureEllipse(),lilg.FeatureEllipse(),],
+        [lilg.FeatureMultiPointBezierCurve(5),],
         category=8
     )
-    glyph.features[0].set_values([0.3,0.45,0.7,0.8])
-    glyph.features[1].set_values([0.3,0.45,0.7,0.2])
-    glyphs.append(glyph)     
+    glyph.features[0].set_values([0.5,0.25,
+                                  0.2,0.35,
+                                  0.5,0.5,
+                                  1.2,
+                                  0.8,0.65,
+                                  0.5,0.75,
+                                  1.2,
+                                  0.2,0.65,
+                                  0.5,0.5,
+                                  1.2,
+                                  0.8,0.35,
+                                  0.5,0.25,
+                                  1.2
+                                 ])
+    glyphs.append(glyph)    
 
 
     glyph = lilg.Glyph(

@@ -104,6 +104,11 @@ venv.bak/
 .mypy_cache/
 
 
-
 # Script output
 output/
+scripts/output/
+
+# Test jupyter notebook
+notebooks/test.ipynb
+
+
