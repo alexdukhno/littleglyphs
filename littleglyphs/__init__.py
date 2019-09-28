@@ -3,8 +3,10 @@ import numpy as np
 import scipy
 import skimage
 
+# min/max clamps on feature values
 feature_clamps_coordinate = (0.1,0.899)
-feature_clamps_weight = (0.01,2)
+feature_clamps_weight = (0.0,2)
+
 
 class Feature:    
     # a Feature denotes a graphical primitive (e.g. curve, circle, 
@@ -187,7 +189,23 @@ class FeatureBezierCurve(Feature):
         x1,y1,xc,yc,x2,y2,wc = self.values
         x1,xc,x2 = (int(x1*imgsize_x), int(xc*imgsize_x), int(x2*imgsize_x))
         y1,yc,y2 = (int(y1*imgsize_y), int(yc*imgsize_y), int(y2*imgsize_y))
-
+                
+        # skimage has an issue with drawing bezier curves:
+        #   if the weight for a bezier curve is lower than ca. 0.3 (and not equal to 0),
+        #   it will occasionally fail to draw about a half of the curve.
+        # Following constant is used for clipping the value when drawing:
+        #   if the desired value of weight is 0.00-0.15, it will be set to 0,
+        #   otherwise if it's 0.15-0.3, it will be set to 0.3, 
+        #   otherwise the value is preserved.
+        feature_clamps_weight_min_for_drawing = 0.3 
+        
+        if wc < (feature_clamps_weight_min_for_drawing + feature_clamps_weight[0])/2:
+            wc = 0
+        elif wc < (feature_clamps_weight_min_for_drawing):
+            wc = feature_clamps_weight_min_for_drawing
+        else: 
+            wc = wc
+            
         cc,rr = skimage.draw.bezier_curve(x1,y1,xc,yc,x2,y2,wc, shape = (imgsize_x,imgsize_y))
         if mode=='set':
             image[rr,cc] = 1
@@ -246,6 +264,23 @@ class FeatureMultiPointBezierCurve(Feature):
         x1,y1,xc,yc,x2,y2,wc = self.values[0:7]
         x1,xc,x2 = (int(x1*imgsize_x), int(xc*imgsize_x), int(x2*imgsize_x))
         y1,yc,y2 = (int(y1*imgsize_y), int(yc*imgsize_y), int(y2*imgsize_y))
+        
+        # skimage has an issue with drawing bezier curves:
+        #   if the weight for a bezier curve is lower than ca. 0.3 (and not equal to 0),
+        #   it will occasionally fail to draw about a half of the curve.
+        # Following constant is used for clipping the value when drawing:
+        #   if the desired value of weight is 0.00-0.15, it will be set to 0,
+        #   otherwise if it's 0.15-0.3, it will be set to 0.3, 
+        #   otherwise the value is preserved.
+        feature_clamps_weight_min_for_drawing = 0.3 
+        
+        if wc < (feature_clamps_weight_min_for_drawing + feature_clamps_weight[0])/2:
+            wc = 0
+        elif wc < (feature_clamps_weight_min_for_drawing):
+            wc = feature_clamps_weight_min_for_drawing
+        else: 
+            wc = wc
+        
         cc,rr = skimage.draw.bezier_curve(x1,y1,xc,yc,x2,y2,wc, shape = (imgsize_x,imgsize_y))
         if mode=='set':
             image[rr,cc] = 1
@@ -257,6 +292,13 @@ class FeatureMultiPointBezierCurve(Feature):
             xc,yc,x2,y2,wc = self.values[7+i*5 : 7+(i+1)*5]
             xc,x2 = (int(xc*imgsize_x), int(x2*imgsize_x))
             yc,y2 = (int(yc*imgsize_y), int(y2*imgsize_y))
+            
+            if wc < (feature_clamps_weight_min_for_drawing + feature_clamps_weight[0])/2:
+                wc = 0
+            elif wc < (feature_clamps_weight_min_for_drawing):
+                wc = feature_clamps_weight_min_for_drawing
+            else: 
+                wc = wc
 
             cc,rr = skimage.draw.bezier_curve(x1,y1,xc,yc,x2,y2,wc, shape = (imgsize_x,imgsize_y))
             if mode=='set':
