@@ -349,11 +349,14 @@ class Glyph:
     # A glyph has a semantical category to which it belongs. This is useful when you want several glyphs
     #   to be semantically identical (e.g. a set of glyphs for 'zero' could be a circle, 
     #   an ellipse or a crossed-out ellipse).
+    # A glyph has additional "traits" that can be added to it.
+    #   Traits contain ancillary info, e.g. comments or subcategory number.
     # A semantical category should be of an integer type.
     
-    def __init__(self, features, category=None):
+    def __init__(self, features, category=None, trait=None):
         self.features = copy.deepcopy(features)
         self.category = copy.deepcopy(category)
+        self.trait = copy.deepcopy(trait)
         self.N_features = len(self.features)
     def add_feature(self, feature):
         self.features.append(feature)
@@ -364,7 +367,9 @@ class Glyph:
     
     def set_category(self, category):
         self.category = category
-    
+    def set_trait(self, trait):
+        self.trait = trait
+        
     def permute(self,permutation_strength):
         # Permutes glyph features in-place.
         for feature in self.features:
@@ -456,6 +461,10 @@ class GlyphList:
     def sort_by_category(self):
         self.glyphs.sort(key=lambda x: x.category)        
     
+    def sort_by_trait(self):
+        # NOTE: possible only if trait is enumerable.
+        self.glyphs.sort(key=lambda x: x.trait)            
+    
     def remove_glyph_category(self, removed_category):
         indices_to_remove = []
         for i, glyph in enumerate(self.glyphs):
@@ -518,6 +527,7 @@ class GlyphList:
             rasters = np.zeros((self.N_glyphs,imgsize,imgsize))
         
         categories = []
+        traits = []
         for i, glyph in enumerate(self.glyphs):
             if randomize_blur:
                 blur_factor_for_current_raster = blur_factor * np.power(random_blur_extent, (np.random.rand()-0.5)*2)
@@ -531,8 +541,9 @@ class GlyphList:
             )
             
             categories.append(glyph.category)
+            traits.append(glyph.trait)
             
-        raster_array = RasterArray(rasters, categories)
+        raster_array = RasterArray(rasters, categories, traits)
         return raster_array
 
     
@@ -553,9 +564,10 @@ class RasterArray:
     # First dimension refers to raster index in the array.
     # 'categories' is a helper numpy array containing the categories that the rasters pertain to.
     
-    def __init__(self, rasters, categories):
+    def __init__(self, rasters, categories, traits=None):
         self.rasters = np.array(rasters)  
         self.categories = np.array(categories)
+        self.traits = traits
         self.N_rasters = self.rasters.shape[0]
         self.imgsize = self.rasters.shape[1]
         # future: extend to rectangular images
