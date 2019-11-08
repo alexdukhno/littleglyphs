@@ -111,4 +111,8 @@ scripts/output/
 # Test jupyter notebook
 notebooks/test.ipynb
 
+# Saved models
+*.h5
+
+
 
