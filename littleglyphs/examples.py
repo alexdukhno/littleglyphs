@@ -1,6 +1,9 @@
 import numpy as np
 import scipy
 import littleglyphs as lilg
+from . import generation as lilggen
+
+
 
 def MNISTlike_glyph_alphabet():
     glyphs = []
@@ -205,3 +208,18 @@ def MNISTlike_glyph_alphabet():
     
     glyph_alphabet = lilg.GlyphList(glyphs)
     return glyph_alphabet
+
+
+
+
+def basic_random_glyph_generator():
+    glyph_gens = []
+    glyph_gens.append(lilggen.RandomGlyphGenerator())
+    glyph_gens[0].add_feature(lilg.FeatureBezierCurve, feature_count=2)
+    glyph_gens.append(lilggen.RandomGlyphGenerator())
+    glyph_gens[1].add_feature(lilg.FeatureBezierCurve, feature_count=3)
+    glyph_gens.append(lilggen.RandomGlyphGenerator())
+    glyph_gens[2].add_feature(lilg.FeatureMultiPointBezierCurve, feature_count=1, N_points=3)
+    
+    alphabet_generator = lilggen.RandomAlphabetGenerator(glyph_gens,weights=[1,0.5,1])
+    return alphabet_generator
