@@ -605,6 +605,21 @@ class RasterArray:
         new_raster_array = self.__class__(new_rasters,new_categories)
         return new_raster_array
     
+    def representative_subsample(self, subsample_size):
+        # Takes subsample_size elements of each category
+        # and builds a new RasterArray with those.
+        representative_rasters = []
+        representative_categories = []
+        for category in range(0,self.N_different_categories):
+            curr_category_indices = self.category_indices[category]
+            curr_category_indices = np.array(curr_category_indices)
+            chosen_indices = np.random.choice(curr_category_indices, subsample_size, replace=False)
+            for index in chosen_indices:
+                representative_rasters.append(self.rasters[index])
+                representative_categories.append(self.categories[index])
+        new_raster_array = self.__class__(representative_rasters, representative_categories)
+        return new_raster_array 
+    
     def distort(self, distorter):
         # Distorts the RasterArray in-place by the passed distorter.
         for i in range(self.N_rasters):
