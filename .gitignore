@@ -113,6 +113,7 @@ notebooks/test.ipynb
 
 # Saved models
 *.h5
+*model.png
 
 
 
