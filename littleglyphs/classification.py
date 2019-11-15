@@ -1,7 +1,9 @@
 import numpy as np
+import scipy
 
 import tensorflow as tf
 import keras
+
 import sklearn 
 from sklearn.model_selection import train_test_split
 
