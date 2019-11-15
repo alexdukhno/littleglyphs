@@ -8,19 +8,21 @@ from littleglyphs.features import *
                 
         
 class Glyph:
-    # a Glyph represents a list of graphical primitives (e.g. curves, circles, 
-    #   straight line segments, bezier curves, etc.), which, when drawn in their order, 
-    #   construct the glyph. Think vector graphics.
-    # A glyph is constructed in the order in which its elements appear in the list.
-    #   For instance, for a glyph comprised of [circle, square, triangle],
-    #   if there is any overlap between the circle, square, and triangle,
-    #   then the topmost would be triangle and bottommost would be circle.
-    # A glyph has a semantical category to which it belongs. This is useful when you want several glyphs
-    #   to be semantically identical (e.g. a set of glyphs for 'zero' could be a circle, 
-    #   an ellipse or a crossed-out ellipse).
-    # A glyph has additional "traits" that can be added to it.
-    #   Traits contain ancillary info, e.g. comments or subcategory number.
-    # A semantical category should be of an integer type.
+    '''
+    a Glyph represents a list of graphical primitives (e.g. curves, circles, 
+      straight line segments, bezier curves, etc.), which, when drawn in their order, 
+      construct the glyph. Think vector graphics.
+    A glyph is constructed in the order in which its elements appear in the list.
+      For instance, for a glyph comprised of [circle, square, triangle],
+      if there is any overlap between the circle, square, and triangle,
+      then the topmost would be triangle and bottommost would be circle.
+    A glyph has a semantical category to which it belongs. This is useful when you want several glyphs
+      to be semantically identical (e.g. a set of glyphs for 'zero' could be a circle, 
+      an ellipse or a crossed-out ellipse).
+    A glyph has additional "traits" that can be added to it.
+      Traits contain ancillary info, e.g. comments or subcategory number.
+    A semantical category should be of an integer type.
+    '''
     
     def __init__(self, features, category=None, trait=None):
         self.features = copy.deepcopy(features)
@@ -40,18 +42,24 @@ class Glyph:
         self.trait = trait
         
     def permute(self,permutation_strength):
-        # Permutes glyph features in-place.
+        '''
+        Permutes glyph features in-place.
+        '''
         for feature in self.features:
             feature.permute(permutation_strength)
 
     def permuted(self,permutation_strength):
-        # Returns a permuted copy of the glyph.
+        '''
+        Returns a permuted copy of the glyph.
+        '''
         new_glyph = self.__class__(self.features, self.category)
         new_glyph.permute(permutation_strength)
         return new_glyph
             
     def randomize_all_features(self):
-        # Randomizes ALL features in-place.
+        '''
+        Randomizes ALL features in-place.
+        '''
         for feature in self.features:
             feature.randomize_all_values()
             
@@ -63,11 +71,13 @@ class Glyph:
         normalize=True,
         mode='set'
     ):
-        # Renders the glyph to a raster, given imgsize (tuple of (imgsize_x, imgsize_y)).    
-        # blur_factor determines how much the image should be blurred before output.
-        # up_down_sample determines if the raster should be constructed from an upsampled image
-        #   and then downsampled (can be important for operations that set individual pixels).
-        # normalize determines if the raster should be normalized by dividing by its maximum.
+        '''
+        Renders the glyph to a raster, given imgsize (tuple of (imgsize_x, imgsize_y)).    
+        blur_factor determines how much the image should be blurred before output.
+        up_down_sample determines if the raster should be constructed from an upsampled image
+          and then downsampled (can be important for operations that set individual pixels).
+        normalize determines if the raster should be normalized by dividing by its maximum.
+        '''
         
         if isinstance(imgsize,tuple):        
             imgsize_x, imgsize_y = imgsize[0], imgsize[1]
@@ -101,7 +111,9 @@ class Glyph:
     
     
 class GlyphList:
-    # a GlyphList is a list of glyphs.
+    ''' 
+    a GlyphList is a wrapper for a list of glyphs with a couple extra utility functions.
+    '''
     
     def __init__(self, glyphs):
         self.glyphs = glyphs
@@ -143,16 +155,20 @@ class GlyphList:
         self.N_glyphs = len(self.glyphs)
     
     def selected(self, indices):
-        # Makes a new copy of the glyphlist containing only selected glyphs.
+        '''
+        Makes a new copy of the glyphlist containing only selected glyphs.
+        '''
         new_glyphs = [copy.deepcopy(self.glyphs[i]) for i in indices]
         new_glyphlist = self.__class__(new_glyphs)
         return new_glyphlist
     
     def duplicated(self, N_clones):
-        # Makes a new glyphlist,
-        # duplicating all glyphs in the existing glyphlist several times in a following manner:
-        # [glyph1, glyph2, glyph3] duplicated twice becomes
-        # [glyph1, glyph1, glyph2, glyph2, glyph3, glyph3]
+        '''
+        Makes a new glyphlist,
+        duplicating all glyphs in the existing glyphlist several times in a following manner:
+        [glyph1, glyph2, glyph3] duplicated twice becomes
+        [glyph1, glyph1, glyph2, glyph2, glyph3, glyph3]
+        '''
         new_glyphs = []
         for glyph in self.glyphs:
             for i in range(N_clones):
@@ -162,10 +178,12 @@ class GlyphList:
     
     def permuted(self, permutation_strength, N_glyph_permutations, 
                  keep_original_glyphs=False):
-        # Makes a new copy of the glyphlist.
-        # Each new glyph is a permuted copy of the old one.
-        # Categories are preserved for permuted glyphs.
-        # If keep_original_glyphs is True, include the original glyphs at the beginning of the list.
+        '''
+        Makes a new copy of the glyphlist.
+        Each new glyph is a permuted copy of the old one.
+        Categories are preserved for permuted glyphs.
+        If keep_original_glyphs is True, include the original glyphs at the beginning of the list.
+        '''
         
         if keep_original_glyphs:
             new_glyphs = copy.deepcopy(self.glyphs)
@@ -225,13 +243,15 @@ class GlyphList:
 
 
 class RasterArray:
-    # a RasterArray is a wrapper for a numpy array containing a stack of rasters:
-    #   rectangular grayscale matrices of identical size, with float values in [0,1] range.
-    # 'N_rasters' contains the quantity of rasters in RasterArray.
-    #   The actual data is stored in 'rasters' variable, 
-    #   but it can be also accessed by direct indexing of RasterArray.
-    # First dimension refers to raster index in the array.
-    # 'categories' is a helper numpy array containing the categories that the rasters pertain to.
+    '''
+    a RasterArray is a wrapper for a numpy array containing a stack of rasters:
+      rectangular grayscale matrices of identical size, with float values in [0,1] range.
+    'N_rasters' contains the quantity of rasters in RasterArray.
+      The actual data is stored in 'rasters' variable, 
+      but it can be also accessed by direct indexing of RasterArray.
+    First dimension refers to raster index in the array.
+    'categories' is a helper numpy array containing the categories that the rasters pertain to.
+    '''
     
     def __init__(self, rasters, categories, traits=None):
         self.rasters = np.array(rasters)  
@@ -253,8 +273,11 @@ class RasterArray:
         return self.N_rasters
 
     def __rebuild_category_indices(self):
-        # Category dictionary maps categories as keys to lists 
-        # of raster indices corresponding to these categories.
+        '''
+        the "self.categories" dictionary maps categories as keys to lists 
+        of raster indices corresponding to these categories.
+        Used as a cache for fast access of rasters belonging to a particular category.
+        '''
         for i in range(0,self.N_rasters):
             if self.categories[i] in self.category_indices:
                 self.category_indices[self.categories[i]] += [i]
@@ -262,21 +285,29 @@ class RasterArray:
                 self.category_indices[self.categories[i]] = [i]
         
     def repeated(self,N_times):
-        # Concatenates the raster array N_times in a row, keeping track of categories.
+        '''
+        Concatenates the raster array N_times in a row, keeping track of categories.
+        '''
         new_rasters = self.rasters.repeat(N_times,axis=0)
         new_categories = self.categories.repeat(N_times,axis=0)
         new_raster_array = self.__class__(new_rasters,new_categories)
         return new_raster_array
     
     def select_category(self, category):
+        '''
+        Returns a new RasterArray that contains only the rasters belonging
+        to a particular category.
+        '''
         new_rasters = self.rasters[self.category_indices[category]]
         new_categories = self.categories[self.category_indices[category]]
         new_raster_array = self.__class__(new_rasters,new_categories)
         return new_raster_array
     
     def representative_subsample(self, subsample_size):
-        # Takes subsample_size elements of each category
-        # and builds a new RasterArray with those.
+        '''
+        Takes subsample_size elements of each category
+        and builds a new RasterArray with those.
+        '''
         representative_rasters = []
         representative_categories = []
         for category in range(0,self.N_different_categories):
@@ -290,13 +321,17 @@ class RasterArray:
         return new_raster_array 
     
     def distort(self, distorter):
-        # Distorts the RasterArray in-place by the passed distorter.
+        '''
+        Distorts the RasterArray in-place by the passed distorter.
+        '''
         for i in range(self.N_rasters):
             self.rasters[i] = distorter.apply(self.rasters[i])
         
     def distorted(self, distorter, N_distortions_per_raster):
-        # Generates a new RasterArray containing images distorted by the passed distorter.
-        # N_distortions_per_image controls how many new distortions are made.
+        '''
+        Generates a new RasterArray containing images distorted by the passed distorter.
+        N_distortions_per_image controls how many new distortions are made.
+        '''
         if N_distortions_per_raster > 0:
             new_raster_array = self.repeated(N_distortions_per_raster)
         else:
@@ -310,8 +345,10 @@ class RasterArray:
     
     
 class Distortion:
-    # A distortion is a wrapper for a function that distorts a raster image, 
-    #   using a certain set of parameters.
+    '''
+    A distortion is a wrapper for a function that distorts a raster image, 
+      using a certain set of parameters.
+    '''
     distortion_type = None
     def __init__(self, **kwargs):
         self.params = kwargs
@@ -319,16 +356,18 @@ class Distortion:
 
 
 class DistortionRandomAffine(Distortion):
-    # Distorts an image with a random affine transformation.
-    # As the more extreme deformations may potentially lead "useful" information in the original image 
-    #   outside of the output image limits, the image is padded beforehand and then cropped around the 
-    #   image centroid to recenter the image.
-    # 
-    # Parameters for transformation are chosen uniformly randomly from: 
-    #   -rotat_distort_max to rotat_distort_max, 
-    #   -shear_distort_max to shear_distort_max, 
-    #   -scale_distort_max to scale_distort_max.
-        
+    '''
+    Distorts an image with a random affine transformation.
+    As the more extreme deformations may potentially lead "useful" information in the original image 
+      outside of the output image limits, the image is padded beforehand and then cropped around the 
+      image centroid to recenter the image.
+    
+    Parameters for transformation are chosen uniformly randomly from: 
+      -rotat_distort_max to rotat_distort_max, 
+      -shear_distort_max to shear_distort_max, 
+      -scale_distort_max to scale_distort_max.
+    '''
+    
     distortion_type = 'RandomAffine'
     
     def __init__(self, **kwargs):
@@ -366,11 +405,12 @@ class DistortionRandomAffine(Distortion):
 
     
 class RandomSequentialDistorter:
-    # a RandomSequentialDistorter is a sequence of distortion functions to apply to an image.
-    # Takes a list of elements equal to [Distortion instance, probability] 
-    #   and sequentially applies the distortions to the image.
-    #   Each distortion is applied with probability from [0, 1].
-    
+    '''
+    a RandomSequentialDistorter is a sequence of distortion functions to apply to an image.
+    Takes a list of elements equal to [Distortion instance, probability] 
+      and sequentially applies the distortions to the image.
+      Each distortion is applied with probability from [0, 1].
+    '''
     
     def __init__(self, distortion_and_probability_list):
         self.distortions = [item[0] for item in distortion_and_probability_list]
@@ -387,7 +427,9 @@ class RandomSequentialDistorter:
     
     
 class SequentialDistorter(RandomSequentialDistorter):
-    # A sequential distorter is a RandomsSequentialDistorter with all probabilities set to 1.
+    '''
+    A sequential distorter is a RandomsSequentialDistorter with all probabilities set to 1.
+    '''
     def __init__(self, distortions):
         self.distortions = distortions
         self.probabilities = [1 for item in distortions]

@@ -14,13 +14,15 @@ feature_clamps_weight = (0.0,2)
 
 
 class Feature:    
-    # a Feature denotes a graphical primitive (e.g. curve, circle, 
-    #   straight line segment, bezier curve, etc.).
-    # 'featuretype' denotes which kind of a primitive the feature is.
-    # 'values' denote which parameters are to be used to invoke 
-    #    this feature when drawing a Glyph (see below).
-    # 'value_clamps' denote the permitted lower and upper bounds on
-    #    values.
+    '''
+    a Feature denotes a graphical primitive (e.g. curve, circle, 
+      straight line segment, bezier curve, etc.).
+    'featuretype' denotes which kind of a primitive the feature is.
+    'values' denote which parameters are to be used to invoke 
+       this feature when drawing a Glyph (see below).
+    'value_clamps' denote the permitted lower and upper bounds on
+       values.
+    '''
     
     feature_type = None    
     expected_value_count = 0    
@@ -84,10 +86,12 @@ class Feature:
         
         
 class FeatureLineSegment(Feature):
-    # A line segment feature.
-    # Feature should contain 4 values:
-    # x1,y1,x2,y2 - coordinates of start and endpoints of line segment.
-    # Image center corresponds to (0.5,0.5).
+    '''
+    A line segment feature.
+    Feature should contain 4 values:
+    x1,y1,x2,y2 - coordinates of start and endpoints of line segment.
+    Image center corresponds to (0.5,0.5).
+    '''
     feature_type = 'LineSegment'
     expected_value_count = 4
     
@@ -108,14 +112,16 @@ class FeatureLineSegment(Feature):
         
                 
 class FeatureMultiPointLineSegment(Feature):
-    # A composite (multipoint) line segment.
-    # Feature should contain 4+2*(N_points-2) values:
-    # x1,y1,x2,y2 - coordinates of start and endpoints of the first segment;    
-    #   for every additional point beyond the first two:
-    # xi,yi - coordinates of control point and endpoint of the next segment.
-    #   NB: for every next segment the starting point is the endpoint of the previous one.
-    # image center corresponds to (0.5,0.5).
-      
+    '''
+    A composite (multipoint) line segment.
+    Feature should contain 4+2*(N_points-2) values:
+    x1,y1,x2,y2 - coordinates of start and endpoints of the first segment;    
+      for every additional point beyond the first two:
+    xi,yi - coordinates of control point and endpoint of the next segment.
+      NB: for every next segment the starting point is the endpoint of the previous one.
+    image center corresponds to (0.5,0.5).
+    '''
+        
     feature_type = 'MultiPointLineSegment'
     expected_value_count = None
 
@@ -177,11 +183,13 @@ class FeatureMultiPointLineSegment(Feature):
         
         
 class FeatureBezierCurve(Feature):
-    # A simple bezier feature: two endpoints, one control point and its weight.
-    # Feature should contain 7 values:
-    # x1,y1,xc,tc,x2,y2,wc - coordinates of start, control, and endpoints of bezier curve, and weight of control point.
-    # Image center corresponds to (0.5,0.5).
-        
+    '''
+    A simple bezier feature: two endpoints, one control point and its weight.
+    Feature should contain 7 values:
+    x1,y1,xc,tc,x2,y2,wc - coordinates of start, control, and endpoints of bezier curve, and weight of control point.
+    Image center corresponds to (0.5,0.5).
+    '''
+    
     feature_type = 'BezierCurve'
     expected_value_count = 7
 
@@ -220,15 +228,17 @@ class FeatureBezierCurve(Feature):
             
             
 class FeatureMultiPointBezierCurve(Feature):
-    # A composite (multipoint) bezier feature.
-    # Feature should contain 7+5*(N_points-2) values:
-    # x1,y1,xc,tc,x2,y2,wc - coordinates of start, control, and endpoints of the first segment of bezier curve, 
-    #   and weight of control point;
-    #   for every additional point beyond the first two:
-    # xci,tci,xi,yi,wc - coordinates of control point and endpoint of the next segment, and weight of control point.
-    #   NB: for every next segment the starting point is the endpoint of the previous one.
-    # image center corresponds to (0.5,0.5).
-      
+    '''
+    A composite (multipoint) bezier feature.
+    Feature should contain 7+5*(N_points-2) values:
+    x1,y1,xc,tc,x2,y2,wc - coordinates of start, control, and endpoints of the first segment of bezier curve, 
+      and weight of control point;
+      for every additional point beyond the first two:
+    xci,tci,xi,yi,wc - coordinates of control point and endpoint of the next segment, and weight of control point.
+      NB: for every next segment the starting point is the endpoint of the previous one.
+    image center corresponds to (0.5,0.5).      
+    '''
+    
     feature_type = 'MultiPointBezierCurve'
     expected_value_count = None
 
@@ -316,11 +326,13 @@ class FeatureMultiPointBezierCurve(Feature):
             
             
 class FeatureEllipse(Feature):
-    # An ellipse feature.
-    # Feature should contain 4 values:
-    # x1,y1,x2,y2 - coordinates of top-left and bottom-right points of bounding rectangle
-    # as floats with values from 0 to 1; image center corresponds to (0.5,0.5).
-
+    '''
+    An ellipse feature.
+    Feature should contain 4 values:
+    x1,y1,x2,y2 - coordinates of top-left and bottom-right points of bounding rectangle
+    as floats with values from 0 to 1; image center corresponds to (0.5,0.5).
+    '''
+    
     feature_type = 'Ellipse'
     expected_value_count = 4
 

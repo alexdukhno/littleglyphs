@@ -11,10 +11,12 @@ from sklearn.model_selection import train_test_split
 # ------- Classification utilities -------
 
 def split_data_for_learning(X, Y, random_seed, crossval_proportion = 0.2, test_proportion = 0.2):
-    # Splits the dataset into training, cross-validation, and test sets.
-    # E.g. with crossval_proportion = 0.2 and test_proportion = 0.2
-    #   the function will split the dataset into
-    #   60% training, 20% cross-val and 20% test set.    
+    '''
+    Splits the dataset into training, cross-validation, and test sets.
+    E.g. with crossval_proportion = 0.2 and test_proportion = 0.2
+      the function will split the dataset into
+      60% training, 20% cross-val and 20% test set.    
+    '''
     test_proportion_secondsplit = (test_proportion/(1-crossval_proportion))
 
     X_traintest, X_cv, Y_traintest, Y_cv = train_test_split(
@@ -42,24 +44,26 @@ def image_distance_euclidean(a,b):
 
 
 def prob_conf_ent_matrix(Y_test,Y_predicted,N_classes):
-    # Calculate probabilistic confusion entropy matrix. 
-    # The matrix is basically like a regular confusion matrix,
-    #   but instead of treating the highest output of a classifier as the output class,
-    #   it treats outputs of classifier as "surety" of the classifier in each class.
-    # This allows to see the cases where the classifier works, 
-    #   but is not very sure in its answers.
-    #
-    # Based on doi:10.3390/e15114969
-    #
-    # Each row corresponds to the "true" class.
-    # Each column corresponds to the "surety" of the classifier
-    #   in its output for the column.
-    # So, for instance, an element [4,2] corresponds to 
-    #   the degree of surety with which the classifier says "it belongs to class 2"
-    #   when it sees an element that in reality belongs to class 4.
-    # Similarly to the case of a regular confusion matrix,
-    #   a good classifier will have high values of diagonal elements
-    #   and low values of all other elements.
+    '''
+    Calculate probabilistic confusion entropy matrix. 
+    The matrix is basically like a regular confusion matrix,
+      but instead of treating the highest output of a classifier as the output class,
+      it treats outputs of classifier as "surety" of the classifier in each class.
+    This allows to see the cases where the classifier works, 
+      but is not very sure in its answers.
+    
+    Based on doi:10.3390/e15114969
+    
+    Each row corresponds to the "true" class.
+    Each column corresponds to the "surety" of the classifier
+      in its output for the column.
+    So, for instance, an element [4,2] corresponds to 
+      the degree of surety with which the classifier says "it belongs to class 2"
+      when it sees an element that in reality belongs to class 4.
+    Similarly to the case of a regular confusion matrix,
+      a good classifier will have high values of diagonal elements
+      and low values of all other elements.
+    '''
     
     Y_test_class = np.argmax(Y_test, axis=1)
     classfreqs = np.bincount(Y_test_class)
@@ -73,9 +77,11 @@ def prob_conf_ent_matrix(Y_test,Y_predicted,N_classes):
 
 
 def seen_based_probabilities(seen):
-    # Utility for selecting items from an array based on how many times they were seen.
-    # Calculates a normalized probability array weighted towards less-seen elements.
-    # Input: a 1D numpy array of how many times the elements have been seen.
+    '''
+    Utility for selecting items from an array based on how many times they were seen.
+    Calculates a normalized probability array weighted towards less-seen elements.
+    Input: a 1D numpy array of how many times the elements have been seen.
+    '''
     p = np.sum(seen+1) / (seen+1)
     p = p / np.sum(p)
     return p
@@ -83,9 +89,11 @@ def seen_based_probabilities(seen):
 
 
 def select_with_seen_based_probabilities(elems,seen,quantity=1,yield_indices=True):
-    # Utility for selecting items from an array based on how many times they were seen.
-    # Randomly selects elements from 'elems', weighted towards less seen elements.
-    # Returns a list of elements, or a numpy array of their indices if 'yield_indices' is true.
+    '''
+    Utility for selecting items from an array based on how many times they were seen.
+    Randomly selects elements from 'elems', weighted towards less seen elements.
+    Returns a list of elements, or a numpy array of their indices if 'yield_indices' is true.
+    '''
     indices = np.random.choice(np.arange(len(elems)),size=quantity,p=seen_based_probabilities(seen))
     
     if quantity == 1:
@@ -286,9 +294,11 @@ class DistanceMetricClassifier:
 # ------- Classification model: CNN -------
 
 
-def prep_data_for_CNN_model(A,imgsize):
-    # Keras implementation of 2d convolutional layers requires that the image has channels, 
-    # even if there's a single channel.
+def prep_data_for_CNN_model(A,imgsize):    
+    '''
+    Keras implementation of 2d convolutional layers requires that the image has channels, 
+      even if there's a single channel.
+    '''
     return A.reshape(A.shape[0],1,imgsize,imgsize)
 
 
@@ -404,8 +414,10 @@ def make_CNN_model(imgsize, N_classes, complexity = 20):
 # ------- Classification model: Siamese CNN -------
 
 def prep_data_for_SiameseCNN_model(A,imgsize):
-    # Keras implementation of 2d convolutional layers requires that the image has channels, 
-    # even if there's a single channel.
+    '''
+    Keras implementation of 2d convolutional layers requires that the image has channels, 
+    even if there's a single channel.
+    '''
     return A.reshape(A.shape[0],2,1,imgsize,imgsize)
 
 
@@ -416,8 +428,10 @@ def select_random_data_pair_indices_for_SiameseCNN(
     N_classes, # How many classes are there
     N_pairs_to_select = 600 # How many pairs in total to select (approx.)
 ):
-    # Utility for selecting indices of random data pairs
-    # Yields approx. 1:1 ratio of "identical" and "different" data pairs
+    '''
+    Utility for selecting indices of random data pairs for Siamese networks.
+    Yields approx. 1:1 ratio of "identical" and "different" data pairs.
+    '''
     
     # Generate "random" pairs
     # Most random pairs will be different
