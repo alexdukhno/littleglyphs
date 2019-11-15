@@ -72,6 +72,152 @@ def prob_conf_ent_matrix(Y_test,Y_predicted,N_classes):
 
 
 
+def seen_based_probabilities(seen):
+    # Utility for selecting items from an array based on how many times they were seen.
+    # Calculates a normalized probability array weighted towards less-seen elements.
+    # Input: a 1D numpy array of how many times the elements have been seen.
+    p = np.sum(seen+1) / (seen+1)
+    p = p / np.sum(p)
+    return p
+
+
+
+def select_with_seen_based_probabilities(elems,seen,quantity=1,yield_indices=True):
+    # Utility for selecting items from an array based on how many times they were seen.
+    # Randomly selects elements from 'elems', weighted towards less seen elements.
+    # Returns a list of elements, or a numpy array of their indices if 'yield_indices' is true.
+    indices = np.random.choice(np.arange(len(elems)),size=quantity,p=seen_based_probabilities(seen))
+    
+    if quantity == 1:
+        indices = [indices]
+    if not yield_indices:
+        res = []
+    for index in indices:
+        seen[index] += 1
+        if not yield_indices:
+            res.append(elems[index])
+    if yield_indices:
+        res = indices
+    return res
+
+
+
+def find_lowest_cross_similarity(costmatrix,N_elems_to_select,penalize_neighbors=0):
+    '''
+    This function finds an answer to the question:
+    "In a matrix of cross-similarity of classes, 
+      find the set of N classes with the lowest total of their cross-similarities".
+    
+    This function finds a solution to this problem by treating it as a 
+      quadratic program for the maximum edge weight clique problem:
+    see https://stats.stackexchange.com/questions/110426/least-correlated-subset-of-random-variables-from-a-correlation-matrix
+    
+    It usually finds a good but not necessarily global minimum.
+    
+    penalize_neighbors parameter is a multiplier that controls 
+      the size of consecutive mutually exclusive subsets of classes.
+    E.g. for choosing 2 classes out of 9 with penalize_neighbors=3,
+      [0,5], [0,8], [4,9], [2,7] could be valid answers and
+      [0,1], [4,5], [6,7], [6,8] will be invalid, because
+      elements 0,1 and 2 will exclude each other (and so will 3,4,5 and 6,7,8).
+    '''
+    N_elems = costmatrix.shape[0]
+    costmatrix_w = np.copy(costmatrix)
+    
+    if (penalize_neighbors>1) and (N_elems % penalize_neighbors != 0):
+        raise 'Neighbor penalization requires matrix to be divisible by "penalize_neighbors" parameter'    
+    if penalize_neighbors>1:
+        N_neighbors = penalize_neighbors
+        for i in range(0,N_elems_to_select): 
+            costmatrix_w[i*N_neighbors:(i+1)*N_neighbors,i*N_neighbors:(i+1)*N_neighbors] += N_elems
+    
+    def l1_sum_con(vec):
+        return np.sum(vec) - N_elems_to_select
+    def quadratic_costfunc(vec):
+        return np.dot( np.dot(np.transpose(vec), costmatrix_w), vec)
+        
+    cons = [{'type':'eq', 'fun': l1_sum_con}]
+    
+    # v0 = np.random.random(N_elems)
+    v0 = np.ones(N_elems)*0.5
+    
+    bounds = scipy.optimize.Bounds(*np.transpose(np.repeat([[0,1]],N_elems,axis=0)))
+    res = scipy.optimize.minimize(quadratic_costfunc, v0, constraints=cons, bounds=bounds)
+    #print(res.message)
+    #print(res.x)
+    #plt.plot(res.x)
+    best_elem_indices = np.argpartition(res.x, -N_elems_to_select)[-N_elems_to_select:]
+    return best_elem_indices
+
+
+
+def find_lowest_cross_similarity_greedy(costmatrix,N_elems_to_select,penalize_neighbors=0):
+    '''
+    This function finds an answer to the question:
+    "In a matrix of cross-similarity of classes, 
+      find the set of N classes with the lowest total of their cross-similarities".
+    
+    This function finds a solution to this problem via a greedy heuristic:
+    
+    1) Find an element with the lowest cross-similarity sum. Use it as the "best" element.
+    2) Iterate through all elements and find which element has lowest cross-similarity to the "best" element.
+    3) Add this element to the list of "best" elements.
+    4) Iterate through all elements and find which element has lowest cross-similarity sum to "best" elements; add it to the list.
+    5) Repeat until we have the desired amount of "best" elements.
+    It usually finds a good but not necessarily global minimum.
+    It scales well for large matrices (complexity of approx. O(N*N_elems_to_select))
+    
+    penalize_neighbors parameter is a multiplier that controls 
+      the size of consecutive mutually exclusive subsets of classes.
+    E.g. for choosing 2 classes out of 9 with penalize_neighbors=3,
+      [0,5], [0,8], [4,9], [2,7] could be valid answers and
+      [0,1], [4,5], [6,7], [6,8] will be invalid, because
+      elements 0,1 and 2 will exclude each other (and so will 3,4,5 and 6,7,8).
+    '''
+    
+    N_elems = costmatrix.shape[0]
+    costmatrix_w = np.copy(costmatrix)
+    elem_cost_global = (np.sum(costmatrix_w, axis=0)-1)
+    if (penalize_neighbors>1) and (N_elems % penalize_neighbors != 0):
+        raise 'Neighbor penalization requires matrix to be divisible by "penalize_neighbors" parameter'    
+    if penalize_neighbors>1:
+        N_neighbors = penalize_neighbors
+        for i in range(0,N_elems_to_select): 
+            costmatrix_w[i*N_neighbors:(i+1)*N_neighbors,i*N_neighbors:(i+1)*N_neighbors] = 0
+    
+    # First element guess is "the one that overall has the lowest cross-corr sum"
+    best_elem_indices = np.zeros(1, dtype=np.int)
+    best_elem_indices[0] = np.argmin(elem_cost_global)
+
+    is_elem_available = np.full((N_elems,),True)
+    is_elem_available[best_elem_indices[0]] = False
+    if penalize_neighbors>1:
+        # Also remove the neighbors from heuristic
+        min_index = best_elem_indices[0]//N_neighbors*N_neighbors
+        max_index = best_elem_indices[0]//N_neighbors*N_neighbors + N_neighbors
+        is_elem_available[min_index:max_index] = False
+    
+    for i in range(0,N_elems_to_select-1):
+        test_elem_indices = is_elem_available.nonzero()[0]        
+        elem_cost_local = np.zeros(N_elems)
+        for j in np.nditer(test_elem_indices):
+            elem_cost_local[j] = np.sum(costmatrix_w[j,best_elem_indices])
+        elem_cost_local[best_elem_indices] = np.inf
+        elem_cost_local[np.where(is_elem_available == False)[0]] = np.inf
+        best_candidate_index = np.argmin(elem_cost_local)
+
+        is_elem_available[best_candidate_index] = False
+        if penalize_neighbors>1:
+            # Also remove the neighbors from heuristic
+            min_index = best_candidate_index//N_neighbors*N_neighbors
+            max_index = best_candidate_index//N_neighbors*N_neighbors + N_neighbors
+            is_elem_available[min_index:max_index] = False
+        
+        best_elem_indices = np.append(best_elem_indices,best_candidate_index)
+    
+    return best_elem_indices
+
+
 
 # ------- Classification model: naive distance metric -------
 
@@ -261,36 +407,6 @@ def prep_data_for_SiameseCNN_model(A,imgsize):
     # Keras implementation of 2d convolutional layers requires that the image has channels, 
     # even if there's a single channel.
     return A.reshape(A.shape[0],2,1,imgsize,imgsize)
-
-
-
-def seen_based_probabilities(seen):
-    # Utility for selecting items from an array based on how many times they were seen.
-    # Calculates a normalized probability array weighted towards less-seen elements.
-    # Input: a 1D numpy array of how many times the elements have been seen.
-    p = np.sum(seen+1) / (seen+1)
-    p = p / np.sum(p)
-    return p
-
-
-
-def select_with_seen_based_probabilities(elems,seen,quantity=1,yield_indices=True):
-    # Utility for selecting items from an array based on how many times they were seen.
-    # Randomly selects elements from 'elems', weighted towards less seen elements.
-    # Returns a list of elements, or a numpy array of their indices if 'yield_indices' is true.
-    indices = np.random.choice(np.arange(len(elems)),size=quantity,p=seen_based_probabilities(seen))
-    
-    if quantity == 1:
-        indices = [indices]
-    if not yield_indices:
-        res = []
-    for index in indices:
-        seen[index] += 1
-        if not yield_indices:
-            res.append(elems[index])
-    if yield_indices:
-        res = indices
-    return res
 
 
 
