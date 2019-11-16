@@ -21,6 +21,14 @@ Built around:
 * Basic classification methods: classification via CNN, Siamese networks with a CNN as the feature extractor, etc.
 * Visualization: one-line utilities for quick examination of glyphs, glyph alphabets, raster arrays, etc.
 
+## Quick start
+For a system equipped with a conda environment:
+```
+git clone https://github.com/alexdukhno/littleglyphs
+conda env create -f littleglyphs/conda_env.yml
+conda activate littleglyphs-cpu
+```
+
 ## What are the applications?
 An obvious utility would be to construct more [wear-resistant](https://i.imgur.com/lcrC9VB.png), more easily machine-readable 
 and/or human-readable fonts.
