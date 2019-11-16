@@ -19,12 +19,14 @@ class RandomGlyphGenerator():
     '''    
     
     feature_list = None
+    blocky = False
     
-    def __init__(self): 
+    def __init__(self, blocky=False): 
         self.feature_list = []
+        self.blocky = blocky
     
     def add_feature(self, feature_type, feature_count=1, **kwargs):
-        self.feature_list += [feature_type(**kwargs) for count in range(0,feature_count)]
+        self.feature_list += [feature_type(blocky=self.blocky,**kwargs) for count in range(0,feature_count)]
             
     def generate_random_glyph(self, category):
         glyph = lilg.Glyph(self.feature_list)
